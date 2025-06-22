@@ -255,6 +255,8 @@ function AdminPanelContent() {
                   value={filters.testType}
                   onChange={(e) => handleFilterChange("testType", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-red-500 focus:ring-red-500"
+                  aria-label="Test Type"
+                  title="Test Type"
                 >
                   <option value="">All Test Types</option>
                   <option value="CBC">CBC Only</option>

@@ -411,6 +411,8 @@ function LabReportGeneratorContent() {
                         onChange={(e) => handleInputChange("testType", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-red-500 focus:ring-red-500"
                         required
+                        aria-label="Test Type"
+                        title="Test Type"
                       >
                         <option value="CBC">Complete Blood Count (CBC)</option>
                         <option value="LFT">Liver Function Test (LFT)</option>
