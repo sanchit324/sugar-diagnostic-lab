@@ -88,6 +88,82 @@ export async function POST(request: NextRequest) {
         "sgptAlt": "ENZYMES",
         "serumProtein": "PROTEINS",
       };
+    } else if (formData.testType === "BloodSugar") {
+      allTests = [
+        { id: "fastingBloodSugar", name: "Fasting Blood Sugar", value: formData.fastingBloodSugar, referenceRange: "70-100 mg/dL" },
+        { id: "postPrandialBloodSugar", name: "Post Prandial Blood Sugar", value: formData.postPrandialBloodSugar, referenceRange: "<140 mg/dL" },
+        { id: "randomBloodSugar", name: "Random Blood Sugar", value: formData.randomBloodSugar, referenceRange: "<200 mg/dL" },
+        { id: "hba1c", name: "HbA1c", value: formData.hba1c, referenceRange: "4.0-5.6 %" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "BLOOD SUGAR TESTS", ids: ["fastingBloodSugar", "postPrandialBloodSugar", "randomBloodSugar"] },
+        "fastingBloodSugar",
+        "postPrandialBloodSugar",
+        "randomBloodSugar",
+        { isGroupHeading: true, label: "GLYCATED HEMOGLOBIN", ids: ["hba1c"] },
+        "hba1c",
+      ];
+    } else if (formData.testType === "Renal") {
+      allTests = [
+        { id: "bloodUrea", name: "Blood Urea", value: formData.bloodUrea, referenceRange: "15-40 mg/dL" },
+        { id: "serumCreatinine", name: "Serum Creatinine", value: formData.serumCreatinine, referenceRange: "0.6-1.3 mg/dL" },
+        { id: "uricAcid", name: "Uric Acid", value: formData.uricAcid, referenceRange: "3.5-7.2 mg/dL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "RENAL FUNCTION TESTS", ids: ["bloodUrea", "serumCreatinine", "uricAcid"] },
+        "bloodUrea",
+        "serumCreatinine",
+        "uricAcid",
+      ];
+    } else if (formData.testType === "Lipid") {
+      allTests = [
+        { id: "totalCholesterol", name: "Total Cholesterol", value: formData.totalCholesterol, referenceRange: "<200 mg/dL" },
+        { id: "triglycerides", name: "Triglycerides", value: formData.triglycerides, referenceRange: "<150 mg/dL" },
+        { id: "hdlCholesterol", name: "HDL Cholesterol", value: formData.hdlCholesterol, referenceRange: ">40 mg/dL" },
+        { id: "ldlCholesterol", name: "LDL Cholesterol", value: formData.ldlCholesterol, referenceRange: "<100 mg/dL" },
+        { id: "vldlCholesterol", name: "VLDL Cholesterol", value: formData.vldlCholesterol, referenceRange: "<30 mg/dL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "CHOLESTEROL", ids: ["totalCholesterol", "hdlCholesterol", "ldlCholesterol", "vldlCholesterol"] },
+        "totalCholesterol",
+        "hdlCholesterol",
+        "ldlCholesterol",
+        "vldlCholesterol",
+        { isGroupHeading: true, label: "TRIGLYCERIDES", ids: ["triglycerides"] },
+        "triglycerides",
+      ];
+    } else if (formData.testType === "TFT") {
+      allTests = [
+        { id: "tsh", name: "TSH (Thyroid Stimulating Hormone)", value: formData.tsh, referenceRange: "0.4-4.0 mIU/L" },
+        { id: "freeT3", name: "Free T3 (Triiodothyronine)", value: formData.freeT3, referenceRange: "2.0-4.4 pg/mL" },
+        { id: "freeT4", name: "Free T4 (Thyroxine)", value: formData.freeT4, referenceRange: "0.93-1.7 ng/dL" },
+        { id: "totalT3", name: "Total T3", value: formData.totalT3, referenceRange: "80-200 ng/dL" },
+        { id: "totalT4", name: "Total T4", value: formData.totalT4, referenceRange: "5.1-14.1 µg/dL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "THYROID HORMONES", ids: ["tsh", "freeT3", "freeT4", "totalT3", "totalT4"] },
+        "tsh",
+        "freeT3",
+        "freeT4",
+        "totalT3",
+        "totalT4",
+      ];
+    } else if (formData.testType === "Urine") {
+      allTests = [
+        { id: "urineProtein", name: "Urine Protein", value: formData.urineProtein, referenceRange: "Negative" },
+        { id: "urineGlucose", name: "Urine Glucose", value: formData.urineGlucose, referenceRange: "Negative" },
+        { id: "urineKetones", name: "Urine Ketones", value: formData.urineKetones, referenceRange: "Negative" },
+        { id: "urinePh", name: "Urine pH", value: formData.urinePh, referenceRange: "4.6-8.0" },
+        { id: "urineSpecificGravity", name: "Urine Specific Gravity", value: formData.urineSpecificGravity, referenceRange: "1.005-1.030" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "URINE CHEMICAL EXAMINATION", ids: ["urineProtein", "urineGlucose", "urineKetones", "urinePh", "urineSpecificGravity"] },
+        "urineProtein",
+        "urineGlucose",
+        "urineKetones",
+        "urinePh",
+        "urineSpecificGravity",
+      ];
     } else {
       // CBC tests (existing logic)
       allTests = [
