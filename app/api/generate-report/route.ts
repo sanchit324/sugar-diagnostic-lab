@@ -168,9 +168,9 @@ export async function POST(request: NextRequest) {
     const pageWidth = 210
     pdf.setFont("helvetica")
 
-    let yPosition = 60
-    const leftMargin = 8
-    const rightMargin = 8
+    let yPosition = 40
+    const leftMargin = 6
+    const rightMargin = 6
     const headerHeight = 20
     pdf.rect(leftMargin, yPosition, pageWidth - leftMargin - rightMargin, headerHeight)
 

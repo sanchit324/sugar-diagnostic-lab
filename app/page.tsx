@@ -381,12 +381,12 @@ function LabReportGeneratorContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 mt-2">
         <Navigation />
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto mt-0">
           {/* Report Generation Form */}
-            <Card className="shadow-lg border-0">
+            <Card className="shadow-lg border-0 min-h-[700px]">
               <CardHeader className="bg-gradient-to-r from-red-600 to-red-700 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <FileText className="h-5 w-5" />
