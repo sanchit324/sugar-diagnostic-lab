@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
     // Main table
     const tableStartY = yPosition
-    const tableHeight = Math.max(180, orderedTests.length * 8 + 30)
+    const tableHeight = Math.max(180, orderedTests.length * 8 + 45)
     const tableWidth = pageWidth - leftMargin - rightMargin
     const col1Width = tableWidth * 0.5
     const col2Width = tableWidth * 0.25
@@ -330,7 +330,7 @@ export async function POST(request: NextRequest) {
       if ("isGroupHeading" in item && item.isGroupHeading) {
         // Add extra space before a new group, except for the first group
         if (idx !== 0) {
-          currentY += 8; // Larger gap between groups
+          currentY += 3; // Smaller gap between groups
         }
         pdf.setTextColor(0, 0, 0);
         pdf.setFont("helvetica", "bold");
@@ -346,19 +346,20 @@ export async function POST(request: NextRequest) {
       if (inGroup) {
         displayName = "        " + displayName; // 8 spaces for indentation
       }
-      pdf.setTextColor(0, 0, 0);
       pdf.setFont("helvetica", "normal");
       pdf.text(displayName, leftMargin + 5, currentY);
+      const status = getValueStatus(test.value, test.referenceRange);
       if (test.value) {
-        const status = getValueStatus(test.value, test.referenceRange);
-        pdf.setTextColor(0, 0, 0);
-        pdf.setFont("helvetica", "normal");
-        pdf.text(test.value, col2CenterX, currentY, { align: "center" });
         if (status === "low" || status === "high") {
           pdf.setFont("helvetica", "bold");
+          pdf.text(test.value, col2CenterX, currentY, { align: "center" });
+          pdf.setFont("helvetica", "bold");
           const indicatorX = leftMargin + col1Width + col2Width - 15;
-          const indicator = status === "low" ? "L" : "H";
+          const indicator = status === "low" ? "(L)" : "(H)";
           pdf.text(indicator, indicatorX, currentY);
+        } else {
+          pdf.setFont("helvetica", "normal");
+          pdf.text(test.value, col2CenterX, currentY, { align: "center" });
         }
       }
       pdf.setTextColor(0, 0, 0);
@@ -373,18 +374,40 @@ export async function POST(request: NextRequest) {
     // Add custom tests to the PDF table if any
     if (customTests.length > 0) {
       // Add a small gap and a section header
-      currentY += 8
+      currentY += 5
       pdf.setFont("helvetica", "bold")
       pdf.setFontSize(11)
       pdf.text("CUSTOM TESTS", leftMargin + 5, currentY)
       pdf.setFont("helvetica", "normal")
       pdf.setFontSize(11)
-      currentY += 8
+      currentY += 5
       customTests.forEach((test) => {
-        pdf.text(test.name, leftMargin + 5, currentY)
-        pdf.text(test.value, col2CenterX, currentY, { align: "center" })
+        // Try to parse and check abnormal for custom tests
+        let abnormal = false;
+        let status: "normal" | "low" | "high" = "normal";
+        if (test.value && test.ref) {
+          status = getValueStatus(test.value, test.ref);
+          abnormal = status === "low" || status === "high";
+        }
+        let displayName = "        " + test.name; // 8 spaces for indentation
+        pdf.setFont("helvetica", "normal");
+        pdf.text(displayName, leftMargin + 5, currentY);
+        if (test.value) {
+          if (abnormal) {
+            pdf.setFont("helvetica", "bold");
+            pdf.text(test.value, col2CenterX, currentY, { align: "center" });
+            pdf.setFont("helvetica", "bold");
+            const indicatorX = leftMargin + col1Width + col2Width - 15;
+            const indicator = status === "low" ? "(L)" : "(H)";
+            pdf.text(indicator, indicatorX, currentY);
+          } else {
+            pdf.setFont("helvetica", "normal");
+            pdf.text(test.value, col2CenterX, currentY, { align: "center" });
+          }
+        }
+        pdf.setFont("helvetica", "normal");
         pdf.text(test.ref, col3CenterX, currentY, { align: "center" })
-        currentY += 8
+        currentY += 5
       })
     }
 
