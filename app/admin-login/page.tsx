@@ -54,7 +54,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/landing" className="inline-flex items-center gap-3 mb-4">
+          <Link href="/" className="inline-flex items-center gap-3 mb-4">
             <div className="p-3 bg-blue-100 rounded-full">
               <TestTube className="h-8 w-8 text-blue-600" />
             </div>
@@ -131,12 +131,6 @@ export default function AdminLogin() {
               </Button>
             </form>
 
-            {/* Back to Home */}
-            <div className="mt-6 text-center">
-              <Link href="/landing" className="text-blue-600 hover:text-blue-700 text-sm">
-                ← Back to Home
-              </Link>
-            </div>
           </CardContent>
         </Card>
 
