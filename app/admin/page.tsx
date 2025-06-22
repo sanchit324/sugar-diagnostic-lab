@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { supabase, type PatientWithTests } from "@/lib/supabase"
 import { Search, Download, Calendar, User, TestTube2, Filter, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 interface FilterState {
   name: string
@@ -18,6 +19,16 @@ interface FilterState {
   dateFrom: string
   dateTo: string
 }
+
+const testTypeOptions = [
+  { value: "CBC", label: "CBC" },
+  { value: "LFT", label: "LFT" },
+  { value: "BloodSugar", label: "Blood Sugar" },
+  { value: "Renal", label: "Renal Function" },
+  { value: "Lipid", label: "Lipid Profile" },
+  { value: "TFT", label: "TFT" },
+  { value: "Urine", label: "Urine Analysis" },
+];
 
 function AdminPanelContent() {
   const [patients, setPatients] = useState<PatientWithTests[]>([])
@@ -32,6 +43,7 @@ function AdminPanelContent() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     fetchPatients()
@@ -171,6 +183,12 @@ function AdminPanelContent() {
     }
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("isAdmin")
+    localStorage.removeItem("adminLoginTime")
+    router.push("/admin-login")
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-white">
@@ -192,9 +210,17 @@ function AdminPanelContent() {
       <Navigation />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
-          <p className="text-gray-600">Manage patient records and lab reports</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+            <p className="text-gray-600">Manage patient records and lab reports</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors"
+          >
+            Log Out
+          </button>
         </div>
 
         {/* Enhanced Search and Filters */}
@@ -259,8 +285,9 @@ function AdminPanelContent() {
                   title="Test Type"
                 >
                   <option value="">All Test Types</option>
-                  <option value="CBC">CBC Only</option>
-                  <option value="LFT">LFT Only</option>
+                  {testTypeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -415,16 +442,18 @@ function AdminPanelContent() {
                           <div key={test.id} className="flex items-center justify-between bg-gray-50 rounded-md p-3">
                             <div className="flex items-center gap-3">
                               <Badge
-                                variant={test.test_type === "CBC" ? "default" : "secondary"}
+                                variant={testTypeOptions.find(t => t.value === test.test_type)?.value === "CBC" ? "default" : "secondary"}
                                 className={
-                                  test.test_type === "CBC" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
+                                  testTypeOptions.find(t => t.value === test.test_type)?.value === "CBC"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-green-100 text-green-800"
                                 }
                               >
-                                {test.test_type}
+                                {testTypeOptions.find(t => t.value === test.test_type)?.label || test.test_type}
                               </Badge>
                               <div>
                                 <p className="text-sm font-medium">
-                                  {test.test_type === "CBC" ? "Complete Blood Count" : "Liver Function Test"}
+                                  {testTypeOptions.find(t => t.value === test.test_type)?.label || test.test_type}
                                 </p>
                                 <p className="text-xs text-gray-600">
                                   Reported: {new Date(test.reported_on).toLocaleString()}

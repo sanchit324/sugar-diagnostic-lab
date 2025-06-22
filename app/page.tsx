@@ -102,8 +102,161 @@ interface FormData {
   serumAlbumin: string
   globulin: string
   agRatio: string
+  // Blood Sugar
+  fastingBloodSugar: string
+  postPrandialBloodSugar: string
+  randomBloodSugar: string
+  hba1c: string
+  // Renal Function
+  bloodUrea: string
+  serumCreatinine: string
+  uricAcid: string
+  // Lipid Profile
+  totalCholesterol: string
+  triglycerides: string
+  hdlCholesterol: string
+  ldlCholesterol: string
+  vldlCholesterol: string
   referredBy: string
+  tsh: string
+  freeT3: string
+  freeT4: string
+  totalT3: string
+  totalT4: string
+  urineProtein: string
+  urineGlucose: string
+  urineKetones: string
+  urinePh: string
+  urineSpecificGravity: string
 }
+
+const testTypeOptions = [
+  { value: "CBC", label: "Complete Blood Count (CBC)" },
+  { value: "LFT", label: "Liver Function Test (LFT)" },
+  { value: "BloodSugar", label: "Blood Sugar" },
+  { value: "Renal", label: "Renal Function" },
+  { value: "Lipid", label: "Lipid Profile" },
+  { value: "TFT", label: "Thyroid Function Test (TFT)" },
+  { value: "Urine", label: "Urine Analysis" },
+];
+
+const testGroupsMap: Record<string, { title: string; tests: { name: string; key: string; ref: string }[] }[]> = {
+  CBC: [
+    {
+      title: "Hematology",
+      tests: [
+        { name: "Hemoglobin", key: "hemoglobin", ref: "11-16 gm/dl" },
+        { name: "Total RBC Count", key: "totalRbcCount", ref: "3.5-6 mill/cumm" },
+        { name: "Hematocrit Value (HCT)", key: "hematocrit", ref: "36-47%" },
+        { name: "Mean Corpuscular Volume (MCV)", key: "mcv", ref: "80-105 fL" },
+        { name: "Mean Cell Hemoglobin (MCH)", key: "mch", ref: "27-32 pg/mL" },
+        { name: "Mean Cell Hemoglobin Conc. (MCHC)", key: "mchc", ref: "32-36 gm/dL" },
+      ],
+    },
+    {
+      title: "White Blood Cell Count",
+      tests: [{ name: "Total Leukocyte Count", key: "totalLeukocyteCount", ref: "4000-11000/cumm" }],
+    },
+    {
+      title: "Differential Leukocyte Count",
+      tests: [
+        { name: "Neutrophils", key: "neutrophils", ref: "40-70 %" },
+        { name: "Lymphocytes", key: "lymphocytes", ref: "20-40 %" },
+        { name: "Eosinophils", key: "eosinophils", ref: "02-04 %" },
+        { name: "Monocytes", key: "monocytes", ref: "00-03%" },
+        { name: "Basophils", key: "basophils", ref: "00-02%" },
+      ],
+    },
+    {
+      title: "Platelet Count",
+      tests: [{ name: "Platelet Count", key: "plateletCount", ref: "1.5-4.5 lac/cumm" }],
+    },
+  ],
+  LFT: [
+    {
+      title: "Bilirubin",
+      tests: [
+        { name: "Serum Bilirubin (Total)", key: "serumBilirubinTotal", ref: "0.2 - 1.2 mg/dL" },
+        { name: "Serum Bilirubin (Direct)", key: "serumBilirubinDirect", ref: "0.0 - 0.3 mg/dL" },
+        { name: "Serum Bilirubin (Indirect)", key: "serumBilirubinIndirect", ref: "0.1 - 1.0 mg/dL" },
+      ],
+    },
+    {
+      title: "Enzymes",
+      tests: [
+        { name: "SGPT (ALT)", key: "sgptAlt", ref: "5 - 40 U/L" },
+        { name: "SGOT (AST)", key: "sgotAst", ref: "5 - 40 U/L" },
+        { name: "Serum Alkaline Phosphatase", key: "serumAlkalinePhosphatase", ref: "40 - 129 U/L" },
+      ],
+    },
+    {
+      title: "Proteins",
+      tests: [
+        { name: "Serum Protein (Total)", key: "serumProtein", ref: "6.0 - 8.3 g/dL" },
+        { name: "Serum Albumin", key: "serumAlbumin", ref: "3.4 - 5.4 g/dL" },
+        { name: "Globulin", key: "globulin", ref: "2.0 - 3.5 g/dL" },
+        { name: "A/G Ratio", key: "agRatio", ref: "1.0 - 2.2" },
+      ],
+    },
+  ],
+  BloodSugar: [
+    {
+      title: "Blood Sugar",
+      tests: [
+        { name: "Fasting Blood Sugar", key: "fastingBloodSugar", ref: "70-100 mg/dL" },
+        { name: "Post Prandial Blood Sugar", key: "postPrandialBloodSugar", ref: "<140 mg/dL" },
+        { name: "Random Blood Sugar", key: "randomBloodSugar", ref: "<200 mg/dL" },
+        { name: "HbA1c", key: "hba1c", ref: "4.0-5.6 %" },
+      ],
+    },
+  ],
+  Renal: [
+    {
+      title: "Renal Function",
+      tests: [
+        { name: "Blood Urea", key: "bloodUrea", ref: "15-40 mg/dL" },
+        { name: "Serum Creatinine", key: "serumCreatinine", ref: "0.6-1.3 mg/dL" },
+        { name: "Uric Acid", key: "uricAcid", ref: "3.5-7.2 mg/dL" },
+      ],
+    },
+  ],
+  Lipid: [
+    {
+      title: "Lipid Profile",
+      tests: [
+        { name: "Total Cholesterol", key: "totalCholesterol", ref: "<200 mg/dL" },
+        { name: "Triglycerides", key: "triglycerides", ref: "<150 mg/dL" },
+        { name: "HDL Cholesterol", key: "hdlCholesterol", ref: ">40 mg/dL" },
+        { name: "LDL Cholesterol", key: "ldlCholesterol", ref: "<100 mg/dL" },
+        { name: "VLDL Cholesterol", key: "vldlCholesterol", ref: "<30 mg/dL" },
+      ],
+    },
+  ],
+  TFT: [
+    {
+      title: "Thyroid Function Test",
+      tests: [
+        { name: "TSH (Thyroid Stimulating Hormone)", key: "tsh", ref: "0.4-4.0 mIU/L" },
+        { name: "Free T3 (Triiodothyronine)", key: "freeT3", ref: "2.0-4.4 pg/mL" },
+        { name: "Free T4 (Thyroxine)", key: "freeT4", ref: "0.93-1.7 ng/dL" },
+        { name: "Total T3", key: "totalT3", ref: "80-200 ng/dL" },
+        { name: "Total T4", key: "totalT4", ref: "5.1-14.1 µg/dL" },
+      ],
+    },
+  ],
+  Urine: [
+    {
+      title: "Urine Analysis",
+      tests: [
+        { name: "Urine Protein", key: "urineProtein", ref: "Negative" },
+        { name: "Urine Glucose", key: "urineGlucose", ref: "Negative" },
+        { name: "Urine Ketones", key: "urineKetones", ref: "Negative" },
+        { name: "Urine pH", key: "urinePh", ref: "4.6-8.0" },
+        { name: "Urine Specific Gravity", key: "urineSpecificGravity", ref: "1.005-1.030" },
+      ],
+    },
+  ],
+};
 
 function LabReportGeneratorContent() {
   const [formData, setFormData] = useState<FormData>({
@@ -136,7 +289,32 @@ function LabReportGeneratorContent() {
     serumAlbumin: "",
     globulin: "",
     agRatio: "",
+    // Blood Sugar
+    fastingBloodSugar: "",
+    postPrandialBloodSugar: "",
+    randomBloodSugar: "",
+    hba1c: "",
+    // Renal Function
+    bloodUrea: "",
+    serumCreatinine: "",
+    uricAcid: "",
+    // Lipid Profile
+    totalCholesterol: "",
+    triglycerides: "",
+    hdlCholesterol: "",
+    ldlCholesterol: "",
+    vldlCholesterol: "",
     referredBy: "SELF",
+    tsh: "",
+    freeT3: "",
+    freeT4: "",
+    totalT3: "",
+    totalT4: "",
+    urineProtein: "",
+    urineGlucose: "",
+    urineKetones: "",
+    urinePh: "",
+    urineSpecificGravity: "",
   })
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
@@ -269,7 +447,7 @@ function LabReportGeneratorContent() {
         body: JSON.stringify({
           ...formData,
           regNo: saveResult.patient.reg_no, // Use the actual reg number from database
-          testType: "CBC",
+          testType: formData.testType,
           customTests: customTests.filter((t) => t.name && t.value && t.ref),
         }),
       })
@@ -326,7 +504,29 @@ function LabReportGeneratorContent() {
         serumAlbumin: "",
         globulin: "",
         agRatio: "",
+        fastingBloodSugar: "",
+        postPrandialBloodSugar: "",
+        randomBloodSugar: "",
+        hba1c: "",
+        bloodUrea: "",
+        serumCreatinine: "",
+        uricAcid: "",
+        totalCholesterol: "",
+        triglycerides: "",
+        hdlCholesterol: "",
+        ldlCholesterol: "",
+        vldlCholesterol: "",
         referredBy: "SELF",
+        tsh: "",
+        freeT3: "",
+        freeT4: "",
+        totalT3: "",
+        totalT4: "",
+        urineProtein: "",
+        urineGlucose: "",
+        urineKetones: "",
+        urinePh: "",
+        urineSpecificGravity: "",
       }
 
       setFormData(resetFormData)
@@ -346,38 +546,6 @@ function LabReportGeneratorContent() {
       setIsGenerating(false)
     }
   }
-
-  const testGroups = [
-    {
-      title: "Hematology",
-      tests: [
-        { name: "Hemoglobin", key: "hemoglobin", ref: "11-16 gm/dl" },
-        { name: "Total RBC Count", key: "totalRbcCount", ref: "3.5-6 mill/cumm" },
-        { name: "Hematocrit Value (HCT)", key: "hematocrit", ref: "36-47%" },
-        { name: "Mean Corpuscular Volume (MCV)", key: "mcv", ref: "80-105 fL" },
-        { name: "Mean Cell Hemoglobin (MCH)", key: "mch", ref: "27-32 pg/mL" },
-        { name: "Mean Cell Hemoglobin Conc. (MCHC)", key: "mchc", ref: "32-36 gm/dL" },
-      ],
-    },
-    {
-      title: "White Blood Cell Count",
-      tests: [{ name: "Total Leukocyte Count", key: "totalLeukocyteCount", ref: "4000-11000/cumm" }],
-    },
-    {
-      title: "Differential Leukocyte Count",
-      tests: [
-        { name: "Neutrophils", key: "neutrophils", ref: "40-70 %" },
-        { name: "Lymphocytes", key: "lymphocytes", ref: "20-40 %" },
-        { name: "Eosinophils", key: "eosinophils", ref: "02-04 %" },
-        { name: "Monocytes", key: "monocytes", ref: "00-03%" },
-        { name: "Basophils", key: "basophils", ref: "00-02%" },
-      ],
-    },
-    {
-      title: "Platelet Count",
-      tests: [{ name: "Platelet Count", key: "plateletCount", ref: "1.5-4.5 lac/cumm" }],
-    },
-  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -414,8 +582,9 @@ function LabReportGeneratorContent() {
                         aria-label="Test Type"
                         title="Test Type"
                       >
-                        <option value="CBC">Complete Blood Count (CBC)</option>
-                        <option value="LFT">Liver Function Test (LFT)</option>
+                        {testTypeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -484,157 +653,36 @@ function LabReportGeneratorContent() {
                         placeholder="SELF"
                         className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                       />
-                    </div>
+                          </div>
                         </div>
                       </div>
                       <Separator />
 
-                  {/* Test Parameters - CBC */}
-                  {formData.testType === "CBC" && (
+                  {/* Render only the selected test type's groups */}
+                  {testGroupsMap[formData.testType] && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Complete Blood Count (CBC)</h3>
-                    <div className="space-y-6">
-                      {testGroups.map((group) => (
-                        <div key={group.title} className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
-                          <h4 className="text-lg font-medium text-blue-700 mb-4">{group.title}</h4>
-                          <div className="grid grid-cols-3 items-center gap-4 font-semibold text-gray-600 mb-2">
-                            <p>Test Name</p>
-                            <p>Value</p>
-                            <p>Reference Range</p>
-                        </div>
-                          {group.tests.map((test) => (
-                            <TestInputRow
-                              key={test.key}
-                              testName={test.name}
-                              value={formData[test.key as keyof FormData]}
-                              referenceRange={test.ref}
-                              onChange={(field, value) => handleInputChange(test.key as keyof FormData, value)}
-                            />
-                          ))}
-                        </div>
-                      ))}
-                      {/* Custom Tests Section */}
-                      <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-medium text-blue-700">Custom Tests</h3>
-                          <Button type="button" variant="outline" onClick={handleAddCustomTest}>
-                            + Add Test
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-3 items-center gap-4 font-semibold text-gray-600 mb-2">
-                          <p>Test Name</p>
-                          <p>Value</p>
-                          <p>Reference Range</p>
-                        </div>
-                        {customTests.map((test, idx) => (
-                          <TestInputRow
-                            key={idx}
-                            testName={test.name}
-                            value={test.value}
-                            referenceRange={test.ref}
-                            onChange={(field, value) => handleCustomTestChange(idx, field as any, value)}
-                            onRemove={() => handleRemoveCustomTest(idx)}
-                            isCustom
-                          />
-                        ))}
-                      </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Test Parameters - LFT */}
-                  {formData.testType === "LFT" && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Liver Function Test (LFT)</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">{testTypeOptions.find(t => t.value === formData.testType)?.label}</h3>
                       <div className="space-y-6">
-                        {/* Group 1: Bilirubin */}
-                        <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
-                          <h4 className="text-lg font-medium text-blue-700 mb-4">Bilirubin</h4>
-                          <div className="grid grid-cols-3 items-center gap-4 font-semibold text-gray-600 mb-2">
-                            <p>Test Name</p>
-                            <p>Value</p>
-                            <p>Reference Range</p>
+                        {testGroupsMap[formData.testType].map((group) => (
+                          <div key={group.title} className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
+                            <h4 className="text-lg font-medium text-blue-700 mb-4">{group.title}</h4>
+                            <div className="grid grid-cols-3 items-center gap-4 font-semibold text-gray-600 mb-2">
+                              <p>Test Name</p>
+                              <p>Value</p>
+                              <p>Reference Range</p>
+                            </div>
+                            {group.tests.map((test) => (
+                              <TestInputRow
+                                key={test.key}
+                                testName={test.name}
+                                value={formData[test.key as keyof FormData]}
+                                referenceRange={test.ref}
+                                onChange={(field, value) => handleInputChange(test.key as keyof FormData, value)}
+                              />
+                            ))}
                           </div>
-                          <TestInputRow
-                            testName="Serum Bilirubin (Total)"
-                            value={formData.serumBilirubinTotal}
-                            referenceRange="0.2 - 1.2 mg/dL"
-                            onChange={(field, value) => handleInputChange("serumBilirubinTotal", value)}
-                          />
-                          <TestInputRow
-                            testName="Serum Bilirubin (Direct)"
-                            value={formData.serumBilirubinDirect}
-                            referenceRange="0.0 - 0.3 mg/dL"
-                            onChange={(field, value) => handleInputChange("serumBilirubinDirect", value)}
-                          />
-                          <TestInputRow
-                            testName="Serum Bilirubin (Indirect)"
-                            value={formData.serumBilirubinIndirect}
-                            referenceRange="0.1 - 1.0 mg/dL"
-                            onChange={(field, value) => handleInputChange("serumBilirubinIndirect", value)}
-                          />
-                        </div>
-                        {/* Group 2: Enzymes */}
-                        <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
-                          <h4 className="text-lg font-medium text-blue-700 mb-4">Enzymes</h4>
-                          <div className="grid grid-cols-3 items-center gap-4 font-semibold text-gray-600 mb-2">
-                            <p>Test Name</p>
-                            <p>Value</p>
-                            <p>Reference Range</p>
-                          </div>
-                          <TestInputRow
-                            testName="SGPT (ALT)"
-                            value={formData.sgptAlt}
-                            referenceRange="5 - 40 U/L"
-                            onChange={(field, value) => handleInputChange("sgptAlt", value)}
-                          />
-                          <TestInputRow
-                            testName="SGOT (AST)"
-                            value={formData.sgotAst}
-                            referenceRange="5 - 40 U/L"
-                            onChange={(field, value) => handleInputChange("sgotAst", value)}
-                          />
-                          <TestInputRow
-                            testName="Serum Alkaline Phosphatase"
-                            value={formData.serumAlkalinePhosphatase}
-                            referenceRange="40 - 129 U/L"
-                            onChange={(field, value) => handleInputChange("serumAlkalinePhosphatase", value)}
-                          />
-                        </div>
-                        {/* Group 3: Proteins */}
-                        <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
-                          <h4 className="text-lg font-medium text-blue-700 mb-4">Proteins</h4>
-                          <div className="grid grid-cols-3 items-center gap-4 font-semibold text-gray-600 mb-2">
-                            <p>Test Name</p>
-                            <p>Value</p>
-                            <p>Reference Range</p>
-                          </div>
-                          <TestInputRow
-                            testName="Serum Protein (Total)"
-                            value={formData.serumProtein}
-                            referenceRange="6.0 - 8.3 g/dL"
-                            onChange={(field, value) => handleInputChange("serumProtein", value)}
-                          />
-                          <TestInputRow
-                            testName="Serum Albumin"
-                            value={formData.serumAlbumin}
-                            referenceRange="3.4 - 5.4 g/dL"
-                            onChange={(field, value) => handleInputChange("serumAlbumin", value)}
-                          />
-                          <TestInputRow
-                            testName="Globulin"
-                            value={formData.globulin}
-                            referenceRange="2.0 - 3.5 g/dL"
-                            onChange={(field, value) => handleInputChange("globulin", value)}
-                          />
-                          <TestInputRow
-                            testName="A/G Ratio"
-                            value={formData.agRatio}
-                            referenceRange="1.0 - 2.2"
-                            onChange={(field, value) => handleInputChange("agRatio", value)}
-                          />
-                        </div>
-                        {/* Custom Tests Section for LFT */}
+                        ))}
+                        {/* Custom Tests Section */}
                         <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium text-blue-700">Custom Tests</h3>

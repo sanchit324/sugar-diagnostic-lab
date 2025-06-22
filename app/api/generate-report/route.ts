@@ -235,18 +235,20 @@ export async function POST(request: NextRequest) {
     // Table data
     let currentY = tableStartY + 25
     const normalLineHeight = 8
-    const dlcLineHeight = 7
-    const dlcHeadingSpacing = 6
+    const groupLineHeight = 7
+    const groupHeadingSpacing = 6
     pdf.setFont("helvetica", "normal")
     pdf.setFontSize(11)
 
+    let inGroup = false;
     orderedTests.forEach((item, idx) => {
       if ("isDLCHeading" in item && item.isDLCHeading) {
         pdf.setTextColor(0, 0, 0);
         pdf.setFont("helvetica", "bold");
         pdf.text("DIFFERENTIAL LEUKOCYTE COUNT", leftMargin + 5, currentY);
         pdf.setFont("helvetica", "normal");
-        currentY += dlcHeadingSpacing + 2; // Extra space before DLC group
+        currentY += groupHeadingSpacing + 2; // Extra space before DLC group
+        inGroup = true;
         return;
       }
       if ("isGroupHeading" in item && item.isGroupHeading) {
@@ -258,18 +260,18 @@ export async function POST(request: NextRequest) {
         pdf.setFont("helvetica", "bold");
         pdf.text(item.label || "", leftMargin + 5, currentY);
         pdf.setFont("helvetica", "normal");
-        currentY += dlcHeadingSpacing; // Small gap after group heading
+        currentY += groupHeadingSpacing; // Small gap after group heading
+        inGroup = true;
         return;
       }
       const test = item as TestData;
-      // For CBC, indent DLC tests
-      const isDLC = formData.testType !== "LFT" && ["neutrophils", "lymphocytes", "eosinophils", "monocytes", "basophils"].includes(test.id);
+      // Indent all tests under any group
+      let displayName = shortenTestName(test.name);
+      if (inGroup) {
+        displayName = "        " + displayName; // 8 spaces for indentation
+      }
       pdf.setTextColor(0, 0, 0);
       pdf.setFont("helvetica", "normal");
-      let displayName = shortenTestName(test.name);
-      if (isDLC) {
-        displayName = "        " + displayName;
-      }
       pdf.text(displayName, leftMargin + 5, currentY);
       if (test.value) {
         const status = getValueStatus(test.value, test.referenceRange);
@@ -289,7 +291,7 @@ export async function POST(request: NextRequest) {
         pdf.text(test.referenceRange, leftMargin + col1Width + col2Width + 5, currentY);
       }
       // Tighter spacing within a group, more space after group heading
-      currentY += isDLC ? dlcLineHeight : 7; // 7mm for tight grouping
+      currentY += groupLineHeight; // 7mm for tight grouping
     })
 
     // Add custom tests to the PDF table if any
