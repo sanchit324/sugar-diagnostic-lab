@@ -1,340 +1,325 @@
 import { type NextRequest, NextResponse } from "next/server"
+import jsPDF from "jspdf"
+
+// Define the data structure for a single test
+interface TestData {
+  id: string
+  name: string
+  value: string
+  referenceRange: string
+}
+
+// Helper function to parse a reference range string (e.g., "11.0 - 16.0") into min/max numbers
+function parseReferenceRange(referenceRange: string): { min: number; max: number } | null {
+  const rangeMatch = referenceRange.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
+  if (rangeMatch) {
+    return {
+      min: Number.parseFloat(rangeMatch[1]),
+      max: Number.parseFloat(rangeMatch[2]),
+    }
+  }
+  return null
+}
+
+// Helper function to determine if a value is low, high, or normal
+function getValueStatus(value: string, referenceRange: string): "normal" | "low" | "high" {
+  if (!value) return "normal"
+  const numValue = Number.parseFloat(value)
+  if (isNaN(numValue)) return "normal"
+
+  const parsedRange = parseReferenceRange(referenceRange)
+  if (parsedRange) {
+    if (numValue < parsedRange.min) return "low"
+    if (numValue > parsedRange.max) return "high"
+  }
+  return "normal"
+}
+
+// Helper function to convert a string to Title Case
+function toTitleCase(str: string): string {
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())
+}
+
+// Helper function to shorten long test names for better display
+function shortenTestName(testName: string): string {
+  const shortened = testName.replace(/CONCENTRATION/gi, "Conc.").replace(/CORPUSCULAR/gi, "Corp.")
+  return toTitleCase(shortened)
+}
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.json()
 
-    // Import jsPDF dynamically to avoid SSR issues
-    const { jsPDF } = await import("jspdf")
-
-    // Create new PDF document
-    const doc = new jsPDF()
-
-    // Set font
-    doc.setFont("helvetica")
-
-    // Start content lower to leave space for letterhead
-    // Patient Information Section (starting at y=60 to leave space for letterhead)
-    doc.setFontSize(11)
-    doc.setTextColor(0, 0, 0)
-
-    // Patient details on left
-    doc.text(`Mr./Ms. ${formData.patientName || "Patient Name"}`, 15, 60)
-    doc.setFontSize(9)
-    doc.text(`Age / Sex    : ${formData.age || "N/A"} YRS / ${formData.sex || "M"}`, 15, 66)
-    doc.text(`Referred by  : Self`, 15, 72)
-    doc.text(`Reg. no.     : ${formData.regNo || "1001"}`, 15, 78)
-
-    // Dates on right (removed barcode)
-    const currentDate = new Date().toLocaleDateString("en-GB")
-    const currentTime = new Date().toLocaleTimeString("en-GB", { hour12: false })
-    doc.text(`Registered on : ${currentDate} ${currentTime}`, 120, 60)
-    doc.text(`Collected on  : ${currentDate}`, 120, 66)
-    doc.text(`Received on   : ${currentDate}`, 120, 72)
-    doc.text(`Reported on   : ${currentDate} ${currentTime}`, 120, 78)
-
-    // Test section header (moved closer)
-    doc.setFontSize(14)
-    doc.setTextColor(0, 0, 0)
-
-    let testResults: Array<{
-      test: string
-      value: string
-      unit: string
-      reference: string
-      flag: string
-    }> = []
-
-    if (formData.testType === "CBC") {
-      doc.text("HAEMATOLOGY", 85, 95)
-      doc.setFontSize(12)
-      doc.text("COMPLETE BLOOD COUNT (CBC)", 70, 102)
-
-      // Helper function to determine if value is abnormal for CBC
-      const getFlag = (value: string, min: number, max: number) => {
-        if (!value || value === "") return ""
-        const numValue = Number.parseFloat(value)
-        if (numValue < min) return "L"
-        if (numValue > max) return "H"
-        return ""
-      }
-
-      testResults = [
-        {
-          test: "HEMOGLOBIN",
-          value: formData.hemoglobin || "",
-          unit: "g/dl",
-          reference: "13 - 17",
-          flag: formData.hemoglobin ? getFlag(formData.hemoglobin, 13, 17) : "",
-        },
-        {
-          test: "TOTAL LEUKOCYTE COUNT",
-          value: formData.totalLeukocyteCount || "",
-          unit: "cumm",
-          reference: "4,800 - 10,800",
-          flag: formData.totalLeukocyteCount ? getFlag(formData.totalLeukocyteCount, 4800, 10800) : "",
-        },
-        { test: "DIFFERENTIAL LEUCOCYTE COUNT", value: "", unit: "", reference: "", flag: "" },
-        {
-          test: "    NEUTROPHILS",
-          value: formData.neutrophils || "",
-          unit: "%",
-          reference: "40 - 80",
-          flag: formData.neutrophils ? getFlag(formData.neutrophils, 40, 80) : "",
-        },
-        {
-          test: "    LYMPHOCYTE",
-          value: formData.lymphocytes || "",
-          unit: "%",
-          reference: "20 - 40",
-          flag: formData.lymphocytes ? getFlag(formData.lymphocytes, 20, 40) : "",
-        },
-        {
-          test: "    EOSINOPHILS",
-          value: formData.eosinophils || "",
-          unit: "%",
-          reference: "1 - 6",
-          flag: formData.eosinophils ? getFlag(formData.eosinophils, 1, 6) : "",
-        },
-        {
-          test: "    MONOCYTES",
-          value: formData.monocytes || "",
-          unit: "%",
-          reference: "2 - 10",
-          flag: formData.monocytes ? getFlag(formData.monocytes, 2, 10) : "",
-        },
-        {
-          test: "    BASOPHILS",
-          value: formData.basophils || "",
-          unit: "%",
-          reference: "< 2",
-          flag: formData.basophils ? (Number.parseFloat(formData.basophils) > 2 ? "H" : "") : "",
-        },
-        {
-          test: "PLATELET COUNT",
-          value: formData.plateletCount || "",
-          unit: "lakhs/cumm",
-          reference: "1.5 - 4.1",
-          flag: formData.plateletCount ? getFlag(formData.plateletCount, 1.5, 4.1) : "",
-        },
-        {
-          test: "TOTAL RBC COUNT",
-          value: formData.totalRbcCount || "",
-          unit: "million/cumm",
-          reference: "4.5 - 5.5",
-          flag: formData.totalRbcCount ? getFlag(formData.totalRbcCount, 4.5, 5.5) : "",
-        },
-        {
-          test: "HEMATOCRIT VALUE, HCT",
-          value: formData.hematocrit || "",
-          unit: "%",
-          reference: "40 - 50",
-          flag: formData.hematocrit ? getFlag(formData.hematocrit, 40, 50) : "",
-        },
-        {
-          test: "MEAN CORPUSCULAR VOLUME, MCV",
-          value: formData.mcv || "",
-          unit: "fL",
-          reference: "83 - 101",
-          flag: formData.mcv ? getFlag(formData.mcv, 83, 101) : "",
-        },
-        {
-          test: "MEAN CELL HAEMOGLOBIN, MCH",
-          value: formData.mch || "",
-          unit: "Pg",
-          reference: "27 - 32",
-          flag: formData.mch ? getFlag(formData.mch, 27, 32) : "",
-        },
-        {
-          test: "MEAN CELL HAEMOGLOBIN CON, MCHC",
-          value: formData.mchc || "",
-          unit: "%",
-          reference: "31.5 - 34.5",
-          flag: formData.mchc ? getFlag(formData.mchc, 31.5, 34.5) : "",
-        },
-      ]
-    } else if (formData.testType === "LFT") {
-      doc.text("BIOCHEMISTRY", 85, 95)
-      doc.setFontSize(12)
-      doc.text("LIVER FUNCTION TEST (LFT)", 70, 102)
-
-      // Helper function to determine if value is abnormal for LFT
-      const getLFTFlag = (value: string, min: number, max: number) => {
-        if (!value || value === "") return ""
-        const numValue = Number.parseFloat(value)
-        if (numValue < min) return "L"
-        if (numValue > max) return "H"
-        return ""
-      }
-
-      testResults = [
-        {
-          test: "SERUM BILIRUBIN (TOTAL)",
-          value: formData.serumBilirubinTotal || "",
-          unit: "mg/dl",
-          reference: "0.2 - 1.2",
-          flag: formData.serumBilirubinTotal ? getLFTFlag(formData.serumBilirubinTotal, 0.2, 1.2) : "",
-        },
-        {
-          test: "SERUM BILIRUBIN (DIRECT)",
-          value: formData.serumBilirubinDirect || "",
-          unit: "mg/dl",
-          reference: "0 - 0.3",
-          flag: formData.serumBilirubinDirect ? getLFTFlag(formData.serumBilirubinDirect, 0, 0.3) : "",
-        },
-        {
-          test: "SERUM BILIRUBIN (INDIRECT)",
-          value: formData.serumBilirubinIndirect || "",
-          unit: "mg/dl",
-          reference: "0.2 - 1",
-          flag: formData.serumBilirubinIndirect ? getLFTFlag(formData.serumBilirubinIndirect, 0.2, 1) : "",
-        },
-        {
-          test: "SGPT (ALT)",
-          value: formData.sgptAlt || "",
-          unit: "U/l",
-          reference: "13 - 40",
-          flag: formData.sgptAlt ? getLFTFlag(formData.sgptAlt, 13, 40) : "",
-        },
-        {
-          test: "SGOT (AST)",
-          value: formData.sgotAst || "",
-          unit: "U/l",
-          reference: "0 - 37",
-          flag: formData.sgotAst ? getLFTFlag(formData.sgotAst, 0, 37) : "",
-        },
-        {
-          test: "SERUM ALKALINE PHOSPHATASE",
-          value: formData.serumAlkalinePhosphatase || "",
-          unit: "U/l",
-          reference: "44 - 147",
-          flag: formData.serumAlkalinePhosphatase ? getLFTFlag(formData.serumAlkalinePhosphatase, 44, 147) : "",
-        },
-        {
-          test: "SERUM PROTEIN",
-          value: formData.serumProtein || "",
-          unit: "g/dl",
-          reference: "6.4 - 8.3",
-          flag: formData.serumProtein ? getLFTFlag(formData.serumProtein, 6.4, 8.3) : "",
-        },
-        {
-          test: "SERUM ALBUMIN",
-          value: formData.serumAlbumin || "",
-          unit: "g/dl",
-          reference: "3.5 - 5.2",
-          flag: formData.serumAlbumin ? getLFTFlag(formData.serumAlbumin, 3.5, 5.2) : "",
-        },
-        {
-          test: "GLOBULIN",
-          value: formData.globulin || "",
-          unit: "g/dl",
-          reference: "1.8 - 3.6",
-          flag: formData.globulin ? getLFTFlag(formData.globulin, 1.8, 3.6) : "",
-        },
-        {
-          test: "A/G RATIO",
-          value: formData.agRatio || "",
-          unit: "",
-          reference: "1.1 - 2.1",
-          flag: formData.agRatio ? getLFTFlag(formData.agRatio, 1.1, 2.1) : "",
-        },
-      ]
+    // Transform the flat formData into the structured TestData array
+    let allTests: TestData[] = [];
+    let testOrder: (string | { isGroupHeading: boolean; label: string; ids?: string[] })[] = [];
+    let groupHeadings: Record<string, string> = {};
+    if (formData.testType === "LFT") {
+      // LFT tests
+      allTests = [
+        { id: "serumBilirubinTotal", name: "Serum Bilirubin (Total)", value: formData.serumBilirubinTotal, referenceRange: "0.2 - 1.2 mg/dL" },
+        { id: "serumBilirubinDirect", name: "Serum Bilirubin (Direct)", value: formData.serumBilirubinDirect, referenceRange: "0.0 - 0.3 mg/dL" },
+        { id: "serumBilirubinIndirect", name: "Serum Bilirubin (Indirect)", value: formData.serumBilirubinIndirect, referenceRange: "0.1 - 1.0 mg/dL" },
+        { id: "sgptAlt", name: "SGPT (ALT)", value: formData.sgptAlt, referenceRange: "5 - 40 U/L" },
+        { id: "sgotAst", name: "SGOT (AST)", value: formData.sgotAst, referenceRange: "5 - 40 U/L" },
+        { id: "serumAlkalinePhosphatase", name: "Serum Alkaline Phosphatase", value: formData.serumAlkalinePhosphatase, referenceRange: "40 - 129 U/L" },
+        { id: "serumProtein", name: "Serum Protein (Total)", value: formData.serumProtein, referenceRange: "6.0 - 8.3 g/dL" },
+        { id: "serumAlbumin", name: "Serum Albumin", value: formData.serumAlbumin, referenceRange: "3.4 - 5.4 g/dL" },
+        { id: "globulin", name: "Globulin", value: formData.globulin, referenceRange: "2.0 - 3.5 g/dL" },
+        { id: "agRatio", name: "A/G Ratio", value: formData.agRatio, referenceRange: "1.0 - 2.2" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "BILIRUBIN" },
+        "serumBilirubinTotal",
+        "serumBilirubinDirect",
+        "serumBilirubinIndirect",
+        { isGroupHeading: true, label: "ENZYMES" },
+        "sgptAlt",
+        "sgotAst",
+        "serumAlkalinePhosphatase",
+        { isGroupHeading: true, label: "PROTEINS" },
+        "serumProtein",
+        "serumAlbumin",
+        "globulin",
+        "agRatio",
+      ];
+      groupHeadings = {
+        "serumBilirubinTotal": "BILIRUBIN",
+        "sgptAlt": "ENZYMES",
+        "serumProtein": "PROTEINS",
+      };
+    } else {
+      // CBC tests (existing logic)
+      allTests = [
+        { id: "hemoglobin", name: "Hemoglobin", value: formData.hemoglobin, referenceRange: "11.0 - 16.0 g/dL" },
+        { id: "totalRbcCount", name: "Total RBC count", value: formData.totalRbcCount, referenceRange: "3.5 - 6.0 mill/cumm" },
+        { id: "hematocrit", name: "Hematocrit value (HCT)", value: formData.hematocrit, referenceRange: "36 - 47 %" },
+        { id: "mcv", name: "Mean corpuscular count (MCV)", value: formData.mcv, referenceRange: "80 - 105 fL" },
+        { id: "mch", name: "Mean cell hemoglobin (MCH)", value: formData.mch, referenceRange: "27 - 32 pg/mL" },
+        { id: "mchc", name: "Mean cell hemoglobin con, MCHC", value: formData.mchc, referenceRange: "32 - 36 gm/dL" },
+        { id: "wbcCount", name: "Total leukocyte count", value: formData.totalLeukocyteCount, referenceRange: "4000 - 11000 /cumm" },
+        { id: "neutrophils", name: "Neutrophils", value: formData.neutrophils, referenceRange: "40 - 70 %" },
+        { id: "lymphocytes", name: "Lymphocyte", value: formData.lymphocytes, referenceRange: "20 - 40 %" },
+        { id: "eosinophils", name: "Eosinophils", value: formData.eosinophils, referenceRange: "02 - 04 %" },
+        { id: "monocytes", name: "Monocytes", value: formData.monocytes, referenceRange: "00 - 03 %" },
+        { id: "basophils", name: "Basophils", value: formData.basophils, referenceRange: "00 - 02 %" },
+        { id: "plateletCount", name: "Platelet count", value: formData.plateletCount, referenceRange: "1.5 - 4.5 lac/cumm" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "HEMATOLOGY", ids: ["hemoglobin", "totalRbcCount", "hematocrit", "mcv", "mch", "mchc"] },
+        "hemoglobin", "totalRbcCount", "hematocrit", "mcv", "mch", "mchc",
+        { isGroupHeading: true, label: "WHITE BLOOD CELL COUNT", ids: ["wbcCount"] },
+        "wbcCount",
+        { isGroupHeading: true, label: "DIFFERENTIAL LEUKOCYTE COUNT", ids: ["neutrophils", "lymphocytes", "eosinophils", "monocytes", "basophils"] },
+        "neutrophils", "lymphocytes", "eosinophils", "monocytes", "basophils",
+        { isGroupHeading: true, label: "PLATELET COUNT", ids: ["plateletCount"] },
+        "plateletCount",
+      ];
     }
 
-    // Table with borders
-    const tableStartY = 110
-    const tableWidth = 180
-    const tableHeight = 8
-    const rowHeight = 6
+    // Filter out tests that don't have a value
+    const testsWithValues = allTests.filter((test) => test.value && test.value.trim() !== "")
+    if (testsWithValues.length === 0) {
+      return NextResponse.json({ error: "No test values provided" }, { status: 400 })
+    }
 
-    // Table headers with border
-    doc.setFillColor(240, 240, 240)
-    doc.rect(15, tableStartY, tableWidth, tableHeight, "FD")
-    doc.setFontSize(10)
-    doc.setTextColor(0, 0, 0)
-    doc.text("TEST", 20, tableStartY + 5)
-    doc.text("VALUE", 90, tableStartY + 5)
-    doc.text("UNIT", 120, tableStartY + 5)
-    doc.text("REFERENCE", 150, tableStartY + 5)
+    // Build ordered tests array with group headings for LFT or DLC heading for CBC
+    const testMap = new Map(testsWithValues.map((test) => [test.id, test]))
+    const orderedTests: (TestData | { isGroupHeading?: boolean; isDLCHeading?: boolean; label?: string })[] = [];
+    if (formData.testType === "LFT") {
+      testOrder.forEach((item) => {
+        if (typeof item === "object" && item.isGroupHeading) {
+          // Only add group heading if at least one test in this group is present
+          const groupTests = testOrder
+            .slice(testOrder.indexOf(item) + 1)
+            .filter((t) => typeof t === "string") as string[];
+          if (groupTests.some((id) => testMap.has(id))) {
+            orderedTests.push({ isGroupHeading: true, label: item.label });
+          }
+        } else if (typeof item === "string" && testMap.has(item)) {
+          orderedTests.push(testMap.get(item)!);
+        }
+      });
+    } else {
+      let addedGroups: Record<string, boolean> = {};
+      testOrder.forEach((item) => {
+        if (typeof item === "object" && item.isGroupHeading) {
+          // Only add group heading if at least one test in this group is present
+          if (item.ids && !addedGroups[item.label] && item.ids.some((id: string) => testMap.has(id))) {
+            orderedTests.push({ isGroupHeading: true, label: item.label });
+            addedGroups[item.label] = true;
+          }
+        } else if (typeof item === "string" && testMap.has(item)) {
+          orderedTests.push(testMap.get(item)!);
+        }
+      });
+    }
 
-    // Vertical lines for table headers
-    doc.line(85, tableStartY, 85, tableStartY + tableHeight) // After TEST
-    doc.line(115, tableStartY, 115, tableStartY + tableHeight) // After VALUE
-    doc.line(145, tableStartY, 145, tableStartY + tableHeight) // After UNIT
+    // After orderedTests, add custom tests if present
+    let customTests: { name: string; value: string; ref: string }[] = []
+    if (formData.customTests && Array.isArray(formData.customTests)) {
+      customTests = formData.customTests.filter(
+        (t: any) => t.name && t.value && t.ref
+      )
+    }
 
-    let yPos = tableStartY + tableHeight
-    testResults.forEach((result, index) => {
-      // Skip empty rows
-      if (!result.test && !result.value) return
+    // Create PDF
+    const pdf = new jsPDF("p", "mm", "a4")
+    const pageWidth = 210
+    pdf.setFont("helvetica")
 
-      const currentRowY = yPos
+    let yPosition = 60
+    const leftMargin = 8
+    const rightMargin = 8
+    const headerHeight = 20
+    pdf.rect(leftMargin, yPosition, pageWidth - leftMargin - rightMargin, headerHeight)
 
-      // Highlight abnormal values with light red background
-      if (result.flag) {
-        doc.setFillColor(255, 230, 230) // Light red background for abnormal values
-        doc.rect(15, currentRowY, tableWidth, rowHeight, "F")
-      } else if (index % 2 === 0) {
-        doc.setFillColor(250, 250, 250) // Light gray for alternate rows
-        doc.rect(15, currentRowY, tableWidth, rowHeight, "F")
+    // Patient info (left side)
+    pdf.setFontSize(12)
+    pdf.setFont("helvetica", "normal")
+    pdf.text("PATIENT NAME: ", leftMargin + 5, yPosition + 7)
+    pdf.setFont("helvetica", "bold")
+    pdf.text((formData.patientName || "").toUpperCase(), leftMargin + 5 + pdf.getTextWidth("PATIENT NAME: "), yPosition + 7)
+    pdf.setFont("helvetica", "normal")
+    pdf.text("AGE/GENDER: ", leftMargin + 5, yPosition + 14)
+    pdf.setFont("helvetica", "bold")
+    pdf.text(`${formData.age || ""} YRS/${(formData.sex || "").toUpperCase()}`, leftMargin + 5 + pdf.getTextWidth("AGE/GENDER: "), yPosition + 14)
+
+    // Report info (right side)
+    const currentDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    const rightEdge = pageWidth - rightMargin - 5
+    pdf.setFont("helvetica", "normal")
+    const reportDateLabel = "REPORT DATE: "
+    pdf.setFont("helvetica", "bold")
+    const dateText = currentDate
+    const fullReportDateText = reportDateLabel + dateText
+    pdf.setFont("helvetica", "normal")
+    pdf.text(reportDateLabel, rightEdge - pdf.getTextWidth(fullReportDateText), yPosition + 7)
+    pdf.setFont("helvetica", "bold")
+    pdf.text(dateText, rightEdge - pdf.getTextWidth(dateText), yPosition + 7)
+
+    pdf.setFont("helvetica", "normal")
+    const referredByLabel = "REFERRED BY: "
+    pdf.setFont("helvetica", "bold")
+    const referredByText = (formData.referredBy || "SELF").toUpperCase()
+    const fullReferredByText = referredByLabel + referredByText
+    pdf.setFont("helvetica", "normal")
+    pdf.text(referredByLabel, rightEdge - pdf.getTextWidth(fullReferredByText), yPosition + 14)
+    pdf.setFont("helvetica", "bold")
+    pdf.text(referredByText, rightEdge - pdf.getTextWidth(referredByText), yPosition + 14)
+
+    yPosition += headerHeight + 5
+
+    // Main table
+    const tableStartY = yPosition
+    const tableHeight = Math.max(180, orderedTests.length * 8 + 30)
+    const tableWidth = pageWidth - leftMargin - rightMargin
+    const col1Width = tableWidth * 0.5
+    const col2Width = tableWidth * 0.25
+    const col3Width = tableWidth * 0.25
+    pdf.rect(leftMargin, tableStartY, tableWidth, tableHeight)
+    pdf.line(leftMargin + col1Width, tableStartY, leftMargin + col1Width, tableStartY + tableHeight)
+    pdf.line(leftMargin + col1Width + col2Width, tableStartY, leftMargin + col1Width + col2Width, tableStartY + tableHeight)
+
+    // Table headers
+    pdf.setFontSize(12)
+    pdf.setFont("helvetica", "bold")
+    const col1CenterX = leftMargin + col1Width / 2
+    const col2CenterX = leftMargin + col1Width + col2Width / 2
+    const col3CenterX = leftMargin + col1Width + col2Width + col3Width / 2
+    pdf.text("TEST NAME", col1CenterX, tableStartY + 10, { align: "center" })
+    pdf.text("OBSERVATION", col2CenterX, tableStartY + 10, { align: "center" })
+    pdf.text("REFERENCE", col3CenterX, tableStartY + 10, { align: "center" })
+    pdf.line(leftMargin, tableStartY + 15, pageWidth - rightMargin, tableStartY + 15)
+
+    // Table data
+    let currentY = tableStartY + 25
+    const normalLineHeight = 8
+    const dlcLineHeight = 7
+    const dlcHeadingSpacing = 6
+    pdf.setFont("helvetica", "normal")
+    pdf.setFontSize(11)
+
+    orderedTests.forEach((item, idx) => {
+      if ("isDLCHeading" in item && item.isDLCHeading) {
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("DIFFERENTIAL LEUKOCYTE COUNT", leftMargin + 5, currentY);
+        pdf.setFont("helvetica", "normal");
+        currentY += dlcHeadingSpacing + 2; // Extra space before DLC group
+        return;
       }
-
-      // Draw row border
-      doc.setDrawColor(200, 200, 200)
-      doc.rect(15, currentRowY, tableWidth, rowHeight, "D")
-
-      // Vertical lines for each column
-      doc.line(85, currentRowY, 85, currentRowY + rowHeight) // After TEST
-      doc.line(115, currentRowY, 115, currentRowY + rowHeight) // After VALUE
-      doc.line(145, currentRowY, 145, currentRowY + rowHeight) // After UNIT
-
-      doc.setFontSize(9)
-      doc.setTextColor(0, 0, 0)
-      doc.text(result.test, 20, currentRowY + 4)
-
-      // Highlight abnormal values with red text and flag
-      if (result.flag) {
-        doc.setTextColor(255, 0, 0) // Red text for abnormal values
-        doc.text(`${result.value} ${result.flag}`, 90, currentRowY + 4)
-        doc.setTextColor(0, 0, 0) // Reset to black
-      } else if (result.value) {
-        doc.text(result.value, 90, currentRowY + 4)
+      if ("isGroupHeading" in item && item.isGroupHeading) {
+        // Add extra space before a new group, except for the first group
+        if (idx !== 0) {
+          currentY += 8; // Larger gap between groups
+        }
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(item.label || "", leftMargin + 5, currentY);
+        pdf.setFont("helvetica", "normal");
+        currentY += dlcHeadingSpacing; // Small gap after group heading
+        return;
       }
-
-      doc.text(result.unit, 120, currentRowY + 4)
-      doc.text(result.reference, 150, currentRowY + 4)
-      yPos += rowHeight
+      const test = item as TestData;
+      // For CBC, indent DLC tests
+      const isDLC = formData.testType !== "LFT" && ["neutrophils", "lymphocytes", "eosinophils", "monocytes", "basophils"].includes(test.id);
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFont("helvetica", "normal");
+      let displayName = shortenTestName(test.name);
+      if (isDLC) {
+        displayName = "        " + displayName;
+      }
+      pdf.text(displayName, leftMargin + 5, currentY);
+      if (test.value) {
+        const status = getValueStatus(test.value, test.referenceRange);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(test.value, col2CenterX, currentY, { align: "center" });
+        if (status === "low" || status === "high") {
+          pdf.setFont("helvetica", "bold");
+          const indicatorX = leftMargin + col1Width + col2Width - 15;
+          const indicator = status === "low" ? "L" : "H";
+          pdf.text(indicator, indicatorX, currentY);
+        }
+      }
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFont("helvetica", "normal");
+      if (test.referenceRange) {
+        pdf.text(test.referenceRange, leftMargin + col1Width + col2Width + 5, currentY);
+      }
+      // Tighter spacing within a group, more space after group heading
+      currentY += isDLC ? dlcLineHeight : 7; // 7mm for tight grouping
     })
 
-    // Signatures (moved closer)
-    yPos += 15
-    doc.setFontSize(10)
-    doc.text("Lab Technician", 20, yPos)
-    doc.text("Dr. Pathologist", 140, yPos)
-    doc.setFontSize(8)
-    doc.text("DMLT, Lab Incharge", 20, yPos + 4)
-    doc.text("MBBS, MD Pathologist", 140, yPos + 4)
+    // Add custom tests to the PDF table if any
+    if (customTests.length > 0) {
+      // Add a small gap and a section header
+      currentY += 8
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(11)
+      pdf.text("CUSTOM TESTS", leftMargin + 5, currentY)
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(11)
+      currentY += 8
+      customTests.forEach((test) => {
+        pdf.text(test.name, leftMargin + 5, currentY)
+        pdf.text(test.value, col2CenterX, currentY, { align: "center" })
+        pdf.text(test.ref, leftMargin + col1Width + col2Width + 5, currentY)
+        currentY += 8
+      })
+    }
 
-    // Page number
-    doc.text("Page 1 of 1", 95, yPos + 12)
-
-    // Footer
-    doc.setFontSize(8)
-    doc.setTextColor(100, 100, 100)
-    doc.text("NOT VALID FOR MEDICO LEGAL PURPOSE", 75, yPos + 20)
-    doc.text("Work timings: Monday to Sunday, 8 am to 8 pm", 65, yPos + 25)
-
-    // Generate PDF buffer
-    const pdfBuffer = doc.output("arraybuffer")
-
-    // Return PDF as response
+    // Generate and return PDF
+    const pdfBuffer = pdf.output("arraybuffer")
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="sugar_diagnostic_${formData.testType.toLowerCase()}_report.pdf"`,
+        "Content-Disposition": `attachment; filename="lab_report_${formData.patientName.replace(/\s+/g, "_")}.pdf"`,
       },
     })
   } catch (error) {
     console.error("Error generating PDF:", error)
-    return NextResponse.json({ error: "Failed to generate PDF report" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 })
   }
 }
