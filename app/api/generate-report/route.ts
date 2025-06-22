@@ -364,7 +364,7 @@ export async function POST(request: NextRequest) {
       pdf.setTextColor(0, 0, 0);
       pdf.setFont("helvetica", "normal");
       if (test.referenceRange) {
-        pdf.text(test.referenceRange, leftMargin + col1Width + col2Width + 5, currentY);
+        pdf.text(test.referenceRange, col3CenterX, currentY, { align: "center" });
       }
       // Tighter spacing within a group, more space after group heading
       currentY += groupLineHeight; // 7mm for tight grouping
@@ -383,7 +383,7 @@ export async function POST(request: NextRequest) {
       customTests.forEach((test) => {
         pdf.text(test.name, leftMargin + 5, currentY)
         pdf.text(test.value, col2CenterX, currentY, { align: "center" })
-        pdf.text(test.ref, leftMargin + col1Width + col2Width + 5, currentY)
+        pdf.text(test.ref, col3CenterX, currentY, { align: "center" })
         currentY += 8
       })
     }
