@@ -25,6 +25,20 @@ export async function POST(request: NextRequest) {
       // Create new patient
       // Generate registration number
       const regNo = `REG${Date.now()}`
+      
+      // Generate serial number (incrementing number)
+      const { data: lastPatient, error: countError } = await supabase
+        .from("patients")
+        .select("serial_number")
+        .order("serial_number", { ascending: false })
+        .limit(1)
+        .single()
+
+      let serialNumber = "1"
+      if (lastPatient && lastPatient.serial_number) {
+        const lastSerial = parseInt(lastPatient.serial_number)
+        serialNumber = (lastSerial + 1).toString()
+      }
 
       // Insert patient data
       const { data: newPatient, error: patientError } = await supabase
@@ -33,8 +47,10 @@ export async function POST(request: NextRequest) {
           name: formData.patientName,
           age: Number.parseInt(formData.age),
           sex: formData.sex,
+          phone_number: formData.phoneNumber || "",
           reg_no: regNo,
-          referred_by: "Self",
+          serial_number: serialNumber,
+          referred_by: formData.referredBy || "Self",
         })
         .select()
         .single()
@@ -70,6 +86,14 @@ export async function POST(request: NextRequest) {
       console.error("Test result insert error:", testResultError)
       throw testResultError
     }
+
+    // Debug logging
+    console.log("Save Patient - Returning patient data:", {
+      id: patientData.id,
+      name: patientData.name,
+      serial_number: patientData.serial_number,
+      reg_no: patientData.reg_no
+    })
 
     return NextResponse.json({
       success: true,

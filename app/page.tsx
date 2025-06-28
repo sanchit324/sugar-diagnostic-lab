@@ -77,6 +77,7 @@ interface FormData {
   patientName: string
   age: string
   sex: string
+  phoneNumber: string
   // CBC fields
   hemoglobin: string
   totalLeukocyteCount: string
@@ -476,6 +477,7 @@ function LabReportGeneratorContent() {
     patientName: "",
     age: "",
     sex: "M",
+    phoneNumber: "",
     // CBC fields
     hemoglobin: "",
     totalLeukocyteCount: "",
@@ -660,6 +662,7 @@ function LabReportGeneratorContent() {
       patientName: patient.name,
       age: patient.age.toString(),
       sex: patient.sex,
+      phoneNumber: patient.phone_number || "",
     }))
     setSearchResults([])
     setShowNewPatientForm(false)
@@ -730,6 +733,10 @@ function LabReportGeneratorContent() {
 
       const saveResult = await saveResponse.json()
 
+      // Debug logging
+      console.log("Form submission - Save result:", saveResult)
+      console.log("Form submission - Patient serial number:", saveResult.patient.serial_number)
+
       // Then generate PDF
       const response = await fetch("/api/generate-report", {
         method: "POST",
@@ -739,6 +746,7 @@ function LabReportGeneratorContent() {
         body: JSON.stringify({
           ...formData,
           regNo: saveResult.patient.reg_no, // Use the actual reg number from database
+          serialNumber: saveResult.patient.serial_number, // Add the serial number
           testType: formData.testType,
           customTests: customTests.filter((t) => t.name && t.value && t.ref),
         }),
@@ -799,6 +807,7 @@ function LabReportGeneratorContent() {
         patientName: selectedPatient ? formData.patientName : "",
         age: selectedPatient ? formData.age : "",
         sex: selectedPatient ? formData.sex : "M",
+        phoneNumber: "",
         hemoglobin: "",
         totalLeukocyteCount: "",
         neutrophils: "",
@@ -993,7 +1002,7 @@ function LabReportGeneratorContent() {
                         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                           Patient Information
                         </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                           <div className="space-y-2">
                             <Label htmlFor="patientName" className="text-gray-700 font-medium">
                               Patient Name *
@@ -1037,6 +1046,19 @@ function LabReportGeneratorContent() {
                         <option>Male</option>
                         <option>Female</option>
                             </select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="phoneNumber" className="text-gray-700 font-medium">
+                              Phone Number
+                            </Label>
+                            <Input
+                              id="phoneNumber"
+                              type="tel"
+                              value={formData.phoneNumber}
+                              onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                              placeholder="Enter phone number"
+                              className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                            />
                           </div>
                         <div className="space-y-2">
                       <Label htmlFor="referredBy" className="text-gray-700 font-medium">

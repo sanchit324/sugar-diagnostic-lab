@@ -11,6 +11,8 @@ export type Patient = {
   age: number
   sex: "M" | "F"
   reg_no: string
+  phone_number: string
+  serial_number: string
   referred_by: string
   created_at: string
   updated_at: string

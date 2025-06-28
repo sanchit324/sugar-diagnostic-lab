@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation"
 interface FilterState {
   name: string
   regNo: string
+  phoneNumber: string
   testType: string
   dateFrom: string
   dateTo: string
@@ -47,6 +48,7 @@ function AdminPanelContent() {
   const [filters, setFilters] = useState<FilterState>({
     name: "",
     regNo: "",
+    phoneNumber: "",
     testType: "",
     dateFrom: "",
     dateTo: "",
@@ -75,6 +77,11 @@ function AdminPanelContent() {
     // Filter by registration number
     if (filters.regNo.trim()) {
       filtered = filtered.filter((patient) => patient.reg_no.toLowerCase().includes(filters.regNo.toLowerCase()))
+    }
+
+    // Filter by phone number
+    if (filters.phoneNumber.trim()) {
+      filtered = filtered.filter((patient) => patient.phone_number.toLowerCase().includes(filters.phoneNumber.toLowerCase()))
     }
 
     // Filter by test type
@@ -111,6 +118,7 @@ function AdminPanelContent() {
     setFilters({
       name: "",
       regNo: "",
+      phoneNumber: "",
       testType: "",
       dateFrom: "",
       dateTo: "",
@@ -265,7 +273,7 @@ function AdminPanelContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Quick Search Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Patient Name</label>
                 <Input
@@ -283,6 +291,16 @@ function AdminPanelContent() {
                   placeholder="Search by reg no..."
                   value={filters.regNo}
                   onChange={(e) => handleFilterChange("regNo", e.target.value)}
+                  className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Phone Number</label>
+                <Input
+                  type="text"
+                  placeholder="Search by phone number..."
+                  value={filters.phoneNumber}
+                  onChange={(e) => handleFilterChange("phoneNumber", e.target.value)}
                   className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                 />
               </div>
@@ -434,7 +452,10 @@ function AdminPanelContent() {
                         <div>
                           <h3 className="font-semibold text-lg text-gray-900">{patient.name}</h3>
                           <p className="text-sm text-gray-600">
-                            Reg No: {patient.reg_no} • Age: {patient.age} • Sex: {patient.sex}
+                            Reg No: {patient.reg_no} • Serial: {patient.serial_number || 'N/A'} • Age: {patient.age} • Sex: {patient.sex}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Phone: {patient.phone_number || 'N/A'} • Referred by: {patient.referred_by}
                           </p>
                         </div>
                       </div>

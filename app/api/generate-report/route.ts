@@ -49,6 +49,14 @@ function shortenTestName(testName: string): string {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.json()
+    
+    // Debug logging
+    console.log("PDF Generation - Received formData:", {
+      patientName: formData.patientName,
+      serialNumber: formData.serialNumber,
+      regNo: formData.regNo,
+      testType: formData.testType
+    })
 
     // Transform the flat formData into the structured TestData array
     let allTests: TestData[] = [];
@@ -401,42 +409,65 @@ export async function POST(request: NextRequest) {
     let yPosition = 40
     const leftMargin = 6
     const rightMargin = 6
-    const headerHeight = 20
+    const headerHeight = 30
     pdf.rect(leftMargin, yPosition, pageWidth - leftMargin - rightMargin, headerHeight)
 
     // Patient info (left side)
     pdf.setFontSize(12)
     pdf.setFont("helvetica", "normal")
-    pdf.text("PATIENT NAME: ", leftMargin + 5, yPosition + 7)
+    pdf.text("PATIENT NAME: ", leftMargin + 5, yPosition + 8)
     pdf.setFont("helvetica", "bold")
-    pdf.text((formData.patientName || "").toUpperCase(), leftMargin + 5 + pdf.getTextWidth("PATIENT NAME: "), yPosition + 7)
+    pdf.text((formData.patientName || "").toUpperCase(), leftMargin + 5 + pdf.getTextWidth("PATIENT NAME: "), yPosition + 8)
     pdf.setFont("helvetica", "normal")
-    pdf.text("AGE/GENDER: ", leftMargin + 5, yPosition + 14)
+    pdf.text("AGE/GENDER: ", leftMargin + 5, yPosition + 16)
     pdf.setFont("helvetica", "bold")
-    pdf.text(`${formData.age || ""} YRS/${(formData.sex || "").toUpperCase()}`, leftMargin + 5 + pdf.getTextWidth("AGE/GENDER: "), yPosition + 14)
+    pdf.text(`${formData.age || ""} YRS/${(formData.sex || "").toUpperCase()}`, leftMargin + 5 + pdf.getTextWidth("AGE/GENDER: "), yPosition + 16)
+    pdf.setFont("helvetica", "normal")
+    pdf.text("REFERRED BY: ", leftMargin + 5, yPosition + 24)
+    pdf.setFont("helvetica", "bold")
+    pdf.text((formData.referredBy || "SELF").toUpperCase(), leftMargin + 5 + pdf.getTextWidth("REFERRED BY: "), yPosition + 24)
 
     // Report info (right side)
     const currentDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
     const rightEdge = pageWidth - rightMargin - 5
     pdf.setFont("helvetica", "normal")
-    const reportDateLabel = "REPORT DATE: "
+    const labNumberLabel = "LAB NUMBER: "
     pdf.setFont("helvetica", "bold")
-    const dateText = currentDate
-    const fullReportDateText = reportDateLabel + dateText
+    
+    // More robust serial number handling
+    let labNumberText = "N/A"
+    if (formData.serialNumber !== null && formData.serialNumber !== undefined && formData.serialNumber !== "") {
+      const serialStr = String(formData.serialNumber)
+      if (serialStr !== "NaN" && serialStr !== "null" && serialStr !== "undefined") {
+        labNumberText = serialStr
+      }
+    }
+    
+    const fullLabNumberText = labNumberLabel + labNumberText
     pdf.setFont("helvetica", "normal")
-    pdf.text(reportDateLabel, rightEdge - pdf.getTextWidth(fullReportDateText), yPosition + 7)
+    pdf.text(labNumberLabel, rightEdge - pdf.getTextWidth(fullLabNumberText), yPosition + 8)
     pdf.setFont("helvetica", "bold")
-    pdf.text(dateText, rightEdge - pdf.getTextWidth(dateText), yPosition + 7)
+    pdf.text(labNumberText, rightEdge - pdf.getTextWidth(labNumberText), yPosition + 8)
 
     pdf.setFont("helvetica", "normal")
-    const referredByLabel = "REFERRED BY: "
+    const phoneLabel = "PHONE: "
     pdf.setFont("helvetica", "bold")
-    const referredByText = (formData.referredBy || "SELF").toUpperCase()
-    const fullReferredByText = referredByLabel + referredByText
+    const phoneText = (formData.phoneNumber || "N/A").toUpperCase()
+    const fullPhoneText = phoneLabel + phoneText
     pdf.setFont("helvetica", "normal")
-    pdf.text(referredByLabel, rightEdge - pdf.getTextWidth(fullReferredByText), yPosition + 14)
+    pdf.text(phoneLabel, rightEdge - pdf.getTextWidth(fullPhoneText), yPosition + 16)
     pdf.setFont("helvetica", "bold")
-    pdf.text(referredByText, rightEdge - pdf.getTextWidth(referredByText), yPosition + 14)
+    pdf.text(phoneText, rightEdge - pdf.getTextWidth(phoneText), yPosition + 16)
+
+    pdf.setFont("helvetica", "normal")
+    const reportedAtLabel = "REPORTED AT: "
+    pdf.setFont("helvetica", "bold")
+    const reportedAtText = currentDate
+    const fullReportedAtText = reportedAtLabel + reportedAtText
+    pdf.setFont("helvetica", "normal")
+    pdf.text(reportedAtLabel, rightEdge - pdf.getTextWidth(fullReportedAtText), yPosition + 24)
+    pdf.setFont("helvetica", "bold")
+    pdf.text(reportedAtText, rightEdge - pdf.getTextWidth(reportedAtText), yPosition + 24)
 
     yPosition += headerHeight + 5
 
