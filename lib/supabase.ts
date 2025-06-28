@@ -19,7 +19,7 @@ export type Patient = {
 export type TestResult = {
   id: string
   patient_id: string
-  test_type: "CBC" | "LFT" | "BloodSugar" | "Renal" | "Lipid" | "TFT" | "Urine"
+  test_type: "CBC" | "LFT" | "BloodSugar" | "Renal" | "Lipid" | "TFT" | "Urine" | "BloodGrouping" | "Vidal" | "Inflammatory" | "Infectious" | "Cardiac" | "Coagulation" | "Electrolytes" | "Vitamins" | "Tumor" | "Pregnancy" | "Pancreatic"
   test_data: any
   registered_on: string
   collected_on: string

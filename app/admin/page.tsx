@@ -28,6 +28,17 @@ const testTypeOptions = [
   { value: "Lipid", label: "Lipid Profile" },
   { value: "TFT", label: "TFT" },
   { value: "Urine", label: "Urine Analysis" },
+  { value: "BloodGrouping", label: "Blood Grouping" },
+  { value: "Vidal", label: "Vidal Test" },
+  { value: "Inflammatory", label: "Inflammatory Markers" },
+  { value: "Infectious", label: "Infectious Diseases" },
+  { value: "Cardiac", label: "Cardiac Markers" },
+  { value: "Coagulation", label: "Coagulation Profile" },
+  { value: "Electrolytes", label: "Electrolytes" },
+  { value: "Vitamins", label: "Vitamins & Minerals" },
+  { value: "Tumor", label: "Tumor Markers" },
+  { value: "Pregnancy", label: "Pregnancy Test" },
+  { value: "Pancreatic", label: "Pancreatic Enzymes" },
 ];
 
 function AdminPanelContent() {

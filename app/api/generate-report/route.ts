@@ -164,6 +164,160 @@ export async function POST(request: NextRequest) {
         "urinePh",
         "urineSpecificGravity",
       ];
+    } else if (formData.testType === "BloodGrouping") {
+      allTests = [
+        { id: "bloodGroup", name: "Blood Group", value: formData.bloodGroup, referenceRange: "A, B, AB, O" },
+        { id: "rhFactor", name: "Rh Factor", value: formData.rhFactor, referenceRange: "Positive/Negative" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "BLOOD GROUPING", ids: ["bloodGroup", "rhFactor"] },
+        "bloodGroup",
+        "rhFactor",
+      ];
+    } else if (formData.testType === "Vidal") {
+      allTests = [
+        { id: "vidalTO", name: "S. Typhi O", value: formData.vidalTO, referenceRange: "<1:80" },
+        { id: "vidalTH", name: "S. Typhi H", value: formData.vidalTH, referenceRange: "<1:160" },
+        { id: "vidalPAO", name: "S. Paratyphi A O", value: formData.vidalPAO, referenceRange: "<1:80" },
+        { id: "vidalPAH", name: "S. Paratyphi A H", value: formData.vidalPAH, referenceRange: "<1:160" },
+        { id: "vidalBO", name: "S. Paratyphi B O", value: formData.vidalBO, referenceRange: "<1:80" },
+        { id: "vidalBH", name: "S. Paratyphi B H", value: formData.vidalBH, referenceRange: "<1:160" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "VIDAL TEST (WIDAL)", ids: ["vidalTO", "vidalTH", "vidalPAO", "vidalPAH", "vidalBO", "vidalBH"] },
+        "vidalTO",
+        "vidalTH",
+        "vidalPAO",
+        "vidalPAH",
+        "vidalBO",
+        "vidalBH",
+      ];
+    } else if (formData.testType === "Inflammatory") {
+      allTests = [
+        { id: "crp", name: "CRP (C-Reactive Protein)", value: formData.crp, referenceRange: "<3.0 mg/L" },
+        { id: "esr", name: "ESR (Erythrocyte Sedimentation Rate)", value: formData.esr, referenceRange: "0-20 mm/hr" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "INFLAMMATORY MARKERS", ids: ["crp", "esr"] },
+        "crp",
+        "esr",
+      ];
+    } else if (formData.testType === "Infectious") {
+      allTests = [
+        { id: "malariaParasite", name: "Malaria Parasite", value: formData.malariaParasite, referenceRange: "Negative" },
+        { id: "dengueNS1", name: "Dengue NS1", value: formData.dengueNS1, referenceRange: "Negative" },
+        { id: "hiv", name: "HIV", value: formData.hiv, referenceRange: "Negative" },
+        { id: "hbsAg", name: "HBsAg", value: formData.hbsAg, referenceRange: "Negative" },
+        { id: "hcv", name: "HCV", value: formData.hcv, referenceRange: "Negative" },
+        { id: "vdrl", name: "VDRL", value: formData.vdrl, referenceRange: "Negative" },
+        { id: "raFactor", name: "RA Factor", value: formData.raFactor, referenceRange: "<14 IU/mL" },
+        { id: "asoTitre", name: "ASO Titre", value: formData.asoTitre, referenceRange: "<200 IU/mL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "INFECTIOUS DISEASES", ids: ["malariaParasite", "dengueNS1", "hiv", "hbsAg", "hcv", "vdrl", "raFactor", "asoTitre"] },
+        "malariaParasite",
+        "dengueNS1",
+        "hiv",
+        "hbsAg",
+        "hcv",
+        "vdrl",
+        "raFactor",
+        "asoTitre",
+      ];
+    } else if (formData.testType === "Cardiac") {
+      allTests = [
+        { id: "cpk", name: "CPK (Creatine Phosphokinase)", value: formData.cpk, referenceRange: "26-192 U/L" },
+        { id: "ldh", name: "LDH (Lactate Dehydrogenase)", value: formData.ldh, referenceRange: "125-220 U/L" },
+        { id: "troponinI", name: "Troponin I", value: formData.troponinI, referenceRange: "<0.04 ng/mL" },
+        { id: "dDimer", name: "D-Dimer", value: formData.dDimer, referenceRange: "<0.5 µg/mL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "CARDIAC MARKERS", ids: ["cpk", "ldh", "troponinI", "dDimer"] },
+        "cpk",
+        "ldh",
+        "troponinI",
+        "dDimer",
+      ];
+    } else if (formData.testType === "Coagulation") {
+      allTests = [
+        { id: "pt", name: "PT (Prothrombin Time)", value: formData.pt, referenceRange: "11-13.5 seconds" },
+        { id: "inr", name: "INR (International Normalized Ratio)", value: formData.inr, referenceRange: "0.8-1.2" },
+        { id: "aptt", name: "APTT (Activated Partial Thromboplastin Time)", value: formData.aptt, referenceRange: "25-35 seconds" },
+        { id: "fibrinogen", name: "Fibrinogen", value: formData.fibrinogen, referenceRange: "200-400 mg/dL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "COAGULATION PROFILE", ids: ["pt", "inr", "aptt", "fibrinogen"] },
+        "pt",
+        "inr",
+        "aptt",
+        "fibrinogen",
+      ];
+    } else if (formData.testType === "Electrolytes") {
+      allTests = [
+        { id: "sodium", name: "Sodium", value: formData.sodium, referenceRange: "135-145 mEq/L" },
+        { id: "potassium", name: "Potassium", value: formData.potassium, referenceRange: "3.5-5.0 mEq/L" },
+        { id: "chloride", name: "Chloride", value: formData.chloride, referenceRange: "96-106 mEq/L" },
+        { id: "bicarbonate", name: "Bicarbonate", value: formData.bicarbonate, referenceRange: "22-28 mEq/L" },
+        { id: "calcium", name: "Calcium", value: formData.calcium, referenceRange: "8.5-10.5 mg/dL" },
+        { id: "phosphorus", name: "Phosphorus", value: formData.phosphorus, referenceRange: "2.5-4.5 mg/dL" },
+        { id: "magnesium", name: "Magnesium", value: formData.magnesium, referenceRange: "1.5-2.5 mg/dL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "ELECTROLYTES", ids: ["sodium", "potassium", "chloride", "bicarbonate", "calcium", "phosphorus", "magnesium"] },
+        "sodium",
+        "potassium",
+        "chloride",
+        "bicarbonate",
+        "calcium",
+        "phosphorus",
+        "magnesium",
+      ];
+    } else if (formData.testType === "Vitamins") {
+      allTests = [
+        { id: "iron", name: "Iron", value: formData.iron, referenceRange: "60-170 µg/dL" },
+        { id: "tibc", name: "TIBC (Total Iron Binding Capacity)", value: formData.tibc, referenceRange: "240-450 µg/dL" },
+        { id: "ferritin", name: "Ferritin", value: formData.ferritin, referenceRange: "20-250 ng/mL" },
+        { id: "vitaminB12", name: "Vitamin B12", value: formData.vitaminB12, referenceRange: "200-900 pg/mL" },
+        { id: "folicAcid", name: "Folic Acid", value: formData.folicAcid, referenceRange: "2.0-20.0 ng/mL" },
+        { id: "vitaminD", name: "Vitamin D (25-OH)", value: formData.vitaminD, referenceRange: "30-100 ng/mL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "VITAMINS & MINERALS", ids: ["iron", "tibc", "ferritin", "vitaminB12", "folicAcid", "vitaminD"] },
+        "iron",
+        "tibc",
+        "ferritin",
+        "vitaminB12",
+        "folicAcid",
+        "vitaminD",
+      ];
+    } else if (formData.testType === "Tumor") {
+      allTests = [
+        { id: "psa", name: "PSA (Prostate Specific Antigen)", value: formData.psa, referenceRange: "<4.0 ng/mL" },
+        { id: "betaHCG", name: "Beta HCG", value: formData.betaHCG, referenceRange: "<5.0 mIU/mL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "TUMOR MARKERS", ids: ["psa", "betaHCG"] },
+        "psa",
+        "betaHCG",
+      ];
+    } else if (formData.testType === "Pregnancy") {
+      allTests = [
+        { id: "betaHCG", name: "Beta HCG", value: formData.betaHCG, referenceRange: "<5.0 mIU/mL" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "PREGNANCY TEST", ids: ["betaHCG"] },
+        "betaHCG",
+      ];
+    } else if (formData.testType === "Pancreatic") {
+      allTests = [
+        { id: "amylase", name: "Amylase", value: formData.amylase, referenceRange: "25-125 U/L" },
+        { id: "lipase", name: "Lipase", value: formData.lipase, referenceRange: "10-140 U/L" },
+      ];
+      testOrder = [
+        { isGroupHeading: true, label: "PANCREATIC ENZYMES", ids: ["amylase", "lipase"] },
+        "amylase",
+        "lipase",
+      ];
     } else {
       // CBC tests (existing logic)
       allTests = [
